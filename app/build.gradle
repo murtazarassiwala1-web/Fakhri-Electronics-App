@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.fakhri.inventory'
+    namespace 'com.fakhri.murtaza_app'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.fakhri.inventory"
+        applicationId "com.fakhri.murtaza_app"
         minSdk 24
         targetSdk 34
         versionCode 1
