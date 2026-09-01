@@ -1,4 +1,4 @@
-package com.fakhri.inventory;
+package com.fakhri.murtaza_app;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -124,4 +124,55 @@ public class MainActivity extends Activity {
             }
         }
     }
+}
+function importData(event) {
+    const file = event.target.files[0]; 
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            
+            // Restore Inventory Data
+            if(workbook.SheetNames.includes("Inventory")) {
+                const invSheet = workbook.Sheets["Inventory"];
+                const invJson = XLSX.utils.sheet_to_json(invSheet);
+                
+                inventory = invJson.map(row => ({
+                    id: String(row["ID"]),
+                    category: row["Category"] || "Other",
+                    name: String(row["Name"]),
+                    price: parseFloat(row["Price"]) || 0,
+                    stock: parseInt(row["Stock"]) || 0
+                })).filter(item => item.id && item.name !== "undefined");
+            }
+            
+            // Restore Revenue Data
+            if(workbook.SheetNames.includes("Daily Revenue")) {
+                const revSheet = workbook.Sheets["Daily Revenue"];
+                const revJson = XLSX.utils.sheet_to_json(revSheet);
+                
+                revenueData = {};
+                revJson.forEach(row => {
+                    if(row["Date"] && row["Sales"]) {
+                        revenueData[row["Date"]] = parseFloat(row["Sales"]);
+                    }
+                });
+            }
+            
+            saveDB(); 
+            alert("Excel Backup Restored Successfully!"); 
+            loadProducts();
+            
+            // Reset the input so you can upload the same file again if needed
+            event.target.value = ''; 
+        } catch(err) {
+            alert("Error reading Excel file! Make sure it's the exact Fakhri_Report.xlsx format.");
+            console.error(err);
+        }
+    }; 
+    // Read as ArrayBuffer for Excel files instead of Text
+    reader.readAsArrayBuffer(file);
 }
