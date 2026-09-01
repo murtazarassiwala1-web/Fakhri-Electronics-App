@@ -1,21 +1,16 @@
-apply plugin: 'com.android.application'
-android {
-    compileSdkVersion 33
-    defaultConfig {
-        applicationId "com.fakhri.murtaza_app"
-        minSdkVersion 21
-        targetSdkVersion 33
-        versionCode 1
-        versionName "1.0.0"
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-    namespace 'com.fakhri.murtaza_app'
+plugins {
+    id 'com.android.application'
 }
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+
+android {
+    namespace 'com.fakhri.inventory'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.fakhri.inventory"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
 }
