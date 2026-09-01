@@ -32,7 +32,6 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         setContentView(webView);
 
-        // 1. Camera aur Storage ki direct permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(new String[]{
                 Manifest.permission.CAMERA,
@@ -48,7 +47,6 @@ public class MainActivity extends Activity {
         webSettings.setAllowUniversalAccessFromFileURLs(true);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
 
-        // 2. Camera Permission ko WebView me bypass karna
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
@@ -56,13 +54,11 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Java ko JavaScript se jodna
         webView.addJavascriptInterface(new WebAppInterface(this), "AndroidBridge");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                // 3. Print aur Excel (Blob) Exports ko HTML se intercept karke Android ko bhejna
                 String js = "javascript:(function() { " +
                         "window.print = function() { AndroidBridge.doPrint(); }; " +
                         "document.addEventListener('click', function(e) { " +
@@ -90,7 +86,6 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    // Yeh class JavaScript se data receive karti hai
     public class WebAppInterface {
         Context mContext;
         WebAppInterface(Context c) { mContext = c; }
@@ -107,7 +102,6 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void downloadBase64(String base64Data, String fileName) {
             try {
-                // Base64 text ko wapas File me convert karke Downloads folder me save karna
                 String base64 = base64Data.substring(base64Data.indexOf(",") + 1);
                 byte[] fileBytes = Base64.decode(base64, Base64.DEFAULT);
                 
@@ -124,55 +118,4 @@ public class MainActivity extends Activity {
             }
         }
     }
-}
-function importData(event) {
-    const file = event.target.files[0]; 
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            
-            // Restore Inventory Data
-            if(workbook.SheetNames.includes("Inventory")) {
-                const invSheet = workbook.Sheets["Inventory"];
-                const invJson = XLSX.utils.sheet_to_json(invSheet);
-                
-                inventory = invJson.map(row => ({
-                    id: String(row["ID"]),
-                    category: row["Category"] || "Other",
-                    name: String(row["Name"]),
-                    price: parseFloat(row["Price"]) || 0,
-                    stock: parseInt(row["Stock"]) || 0
-                })).filter(item => item.id && item.name !== "undefined");
-            }
-            
-            // Restore Revenue Data
-            if(workbook.SheetNames.includes("Daily Revenue")) {
-                const revSheet = workbook.Sheets["Daily Revenue"];
-                const revJson = XLSX.utils.sheet_to_json(revSheet);
-                
-                revenueData = {};
-                revJson.forEach(row => {
-                    if(row["Date"] && row["Sales"]) {
-                        revenueData[row["Date"]] = parseFloat(row["Sales"]);
-                    }
-                });
-            }
-            
-            saveDB(); 
-            alert("Excel Backup Restored Successfully!"); 
-            loadProducts();
-            
-            // Reset the input so you can upload the same file again if needed
-            event.target.value = ''; 
-        } catch(err) {
-            alert("Error reading Excel file! Make sure it's the exact Fakhri_Report.xlsx format.");
-            console.error(err);
-        }
-    }; 
-    // Read as ArrayBuffer for Excel files instead of Text
-    reader.readAsArrayBuffer(file);
 }
