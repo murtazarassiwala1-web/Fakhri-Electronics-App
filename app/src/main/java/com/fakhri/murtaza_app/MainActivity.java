@@ -1,37 +1,25 @@
-package com.fakhri.murtaza_app;
+package com.fakhri.inventory;
 
+import android.app.Activity;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
-import android.webkit.WebView;
 import android.webkit.WebSettings;
-import android.webkit.WebViewClient;
+import android.webkit.WebView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         
-        WebView webView = findViewById(R.id.webView);
+        WebView webView = new WebView(this);
+        setContentView(webView);
+        
         WebSettings webSettings = webView.getSettings();
-
-        // Action bar hide karne ka code
-if (getSupportActionBar() != null) {
-    getSupportActionBar().hide();
-}
-
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
-        webSettings.setBuiltInZoomControls(true);
         webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
         
-        if (true) {
-            webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        } else {
-            webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-        }
-
-        webView.setWebViewClient(new WebViewClient());
+        // Aapki HTML file yahan se load hogi
         webView.loadUrl("file:///android_asset/index.html");
     }
 }
