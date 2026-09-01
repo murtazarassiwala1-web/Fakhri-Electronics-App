@@ -19,7 +19,12 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # gradlew ki jagah direct 'gradle' command ka use
+    # GitHub ko Gradle 8.4 use karne ka command
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '8.4'
+
     - name: Build Debug APK
       run: gradle assembleDebug
 
