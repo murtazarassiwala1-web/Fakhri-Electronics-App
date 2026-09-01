@@ -175,11 +175,12 @@
                 <button onclick="exportData()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold shadow-sm">
                     <i class="fa-solid fa-file-code mr-2"></i> Export Backup (JSON)
                 </button>
-                <div class="relative pt-2">
-                    <input type="file" id="importFile" onchange="importData(event)" accept=".json" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                    <button class="w-full bg-slate-100 text-slate-700 border border-slate-300 py-3 rounded-xl font-bold">
-                        <i class="fa-solid fa-upload mr-2"></i> Restore Backup
-                    </button>
+<div class="pt-2">
+    <input type="file" id="importFile" onchange="importData(event)" accept=".xlsx, .xls" class="hidden">
+    <button onclick="document.getElementById('importFile').click()" class="w-full bg-slate-100 text-slate-700 border border-slate-300 py-3 rounded-xl font-bold shadow-sm">
+        <i class="fa-solid fa-upload mr-2"></i> Restore Backup (.xlsx)
+    </button>
+</div>
                 </div>
             </div>
             <div class="bg-red-50 p-5 rounded-2xl shadow-sm border border-red-100">
