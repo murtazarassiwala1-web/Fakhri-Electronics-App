@@ -3,9 +3,12 @@ package com.fakhri.murtaza_app;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -61,7 +64,6 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> request.grant(request.getResources()));
             }
 
-            // Restore Backup बटन से File Manager खोलने का कोड
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 if (uploadMessage != null) {
@@ -95,7 +97,6 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    // File Manager का रिज़ल्ट वापस App में भेजना
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == FILECHOOSER_RESULTCODE) {
@@ -106,7 +107,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // JavaScript से Data लेकर Android में प्रोसेस करना
     public class WebAppInterface {
         Context mContext;
         WebAppInterface(Context c) { mContext = c; }
@@ -126,31 +126,50 @@ public class MainActivity extends Activity {
                 String base64 = base64Data.substring(base64Data.indexOf(",") + 1);
                 byte[] fileBytes = Base64.decode(base64, Base64.DEFAULT);
                 
-                // Android 10 और उसके बाद के वर्ज़न के लिए MediaStore Storage Bypass
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContentResolver resolver = mContext.getContentResolver();
+                    Uri collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+
+                    // 1. Purani file dhoondho aur delete karo (Overwrite logic)
+                    String selection = MediaStore.Downloads.DISPLAY_NAME + " == ?";
+                    String[] selectionArgs = new String[]{fileName};
+                    Cursor cursor = resolver.query(collection, new String[]{MediaStore.Downloads._ID}, selection, selectionArgs, null);
+                    if (cursor != null) {
+                        while (cursor.moveToNext()) {
+                            long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID));
+                            Uri existingUri = ContentUris.withAppendedId(collection, id);
+                            resolver.delete(existingUri, null, null);
+                        }
+                        cursor.close();
+                    }
+
+                    // 2. Nayi file fresh save karo
                     ContentValues values = new ContentValues();
                     values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
                     values.put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
                     values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
                     
-                    Uri uri = mContext.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                    Uri uri = resolver.insert(collection, values);
                     if (uri != null) {
-                        OutputStream os = mContext.getContentResolver().openOutputStream(uri);
+                        OutputStream os = resolver.openOutputStream(uri);
                         os.write(fileBytes);
                         os.close();
-                        runOnUiThread(() -> Toast.makeText(mContext, "Saved to Downloads Folder!", Toast.LENGTH_LONG).show());
+                        runOnUiThread(() -> Toast.makeText(mContext, "Excel Exported & Overwritten!", Toast.LENGTH_LONG).show());
                     }
                 } else {
-                    // पुराने Android वर्ज़न के लिए
                     File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                     File file = new File(path, fileName);
+                    // Purani file delete (older Android)
+                    if (file.exists()) {
+                        file.delete();
+                    }
                     FileOutputStream os = new FileOutputStream(file);
                     os.write(fileBytes);
                     os.close();
-                    runOnUiThread(() -> Toast.makeText(mContext, "Saved to Downloads Folder!", Toast.LENGTH_LONG).show());
+                    runOnUiThread(() -> Toast.makeText(mContext, "Excel Exported & Overwritten!", Toast.LENGTH_LONG).show());
                 }
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(mContext, "Download Failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(mContext, "Export Failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }
     }
