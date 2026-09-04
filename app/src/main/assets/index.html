@@ -31,9 +31,9 @@
             .print-page { page-break-after: always; padding: 10mm; }
             .print-page:last-child { page-break-after: auto; }
             .page-title { font-size: 24px; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 5px; font-weight: bold; }
-            .qr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-            .qr-box { border: 2px solid #000; padding: 10px; text-align: center; border-radius: 8px; break-inside: avoid; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; }
-            .qr-name { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #000; }
+            .qr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; } 
+            .qr-box { border: 3px solid #000; padding: 15px; text-align: center; border-radius: 12px; break-inside: avoid; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 185px; } 
+            .qr-name { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #000; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
             .qr-img-container { display: flex; justify-content: center; }
         }
     </style>
@@ -74,7 +74,7 @@
                 <div class="border-t border-slate-100 pt-2 max-h-32 overflow-y-auto" id="revenueHistory"></div>
             </div>
 
-            <h3 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Low Stock Alerts ( < 4 )</h3>
+            <h3 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Low Stock Alerts ( 0 to 2 )</h3>
             <div id="lowStockList" class="space-y-3"></div>
         </div>
 
@@ -325,8 +325,10 @@
             inventory.forEach(p => { 
                 totalValue += (p.price * p.stock); 
                 totalStock += p.stock; 
-                if (p.stock < 4) lowStock.push(p); 
+                if (p.stock <= 2) lowStock.push(p); 
             });
+            
+            lowStock.sort((a, b) => a.stock - b.stock);
             
             document.getElementById('dashTotalValue').innerText = totalValue.toLocaleString('en-IN');
             document.getElementById('dashTotalStock').innerText = totalStock;
@@ -356,7 +358,7 @@
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center cursor-pointer mb-3 border border-slate-100" onclick="openProductDetail('${p.id}')">
                     <div><h4 class="font-bold text-slate-800 text-sm">${p.name}</h4><p class="text-xs text-slate-500">${p.id}</p></div>
                     <div class="text-right">
-                        <span class="block px-2 py-1 rounded text-xs font-bold ${p.stock>=4 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'} mb-1">${p.stock} in stock</span>
+                        <span class="block px-2 py-1 rounded text-xs font-bold ${p.stock>=3 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'} mb-1">${p.stock} in stock</span>
                         <span class="text-xs font-bold text-slate-400">₹${p.price.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
@@ -373,7 +375,7 @@
                 <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center cursor-pointer mb-3 border border-slate-100" onclick="openProductDetail('${p.id}')">
                     <div><h4 class="font-bold text-slate-800 text-sm">${p.name}</h4><p class="text-xs text-slate-500">${p.id}</p></div>
                     <div class="text-right">
-                        <span class="block px-2 py-1 rounded text-xs font-bold ${p.stock>=4 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'} mb-1">${p.stock} in stock</span>
+                        <span class="block px-2 py-1 rounded text-xs font-bold ${p.stock>=3 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'} mb-1">${p.stock} in stock</span>
                         <span class="text-xs font-bold text-slate-400">₹${p.price.toLocaleString('en-IN')}</span>
                     </div>
                 </div>
@@ -442,32 +444,42 @@
             ];
 
             let qrTargets = []; 
+            const ITEMS_PER_PAGE = 15;
 
             groups.forEach(group => {
                 if(group.items.length > 0) {
-                    let html = `<div class="print-page">
-                                    <h2 class="page-title">${group.title}</h2>
-                                    <div class="qr-grid">`;
-                    
-                    group.items.forEach(item => {
-                        const targetId = 'qr-bulk-' + item.id;
-                        html += `
-                            <div class="qr-box">
-                                <div class="qr-name">${item.name}</div>
-                                <div id="${targetId}" class="qr-img-container"></div>
-                            </div>
-                        `;
-                        qrTargets.push({ id: targetId, text: item.id });
-                    });
-                    
-                    html += `</div></div>`;
-                    printArea.innerHTML += html;
+                    for (let i = 0; i < group.items.length; i += ITEMS_PER_PAGE) {
+                        const chunk = group.items.slice(i, i + ITEMS_PER_PAGE);
+                        
+                        let pageTitle = group.title;
+                        if (group.items.length > ITEMS_PER_PAGE) {
+                            pageTitle += ` (Page ${Math.floor(i / ITEMS_PER_PAGE) + 1})`;
+                        }
+
+                        let html = `<div class="print-page">
+                                        <h2 class="page-title">${pageTitle}</h2>
+                                        <div class="qr-grid">`;
+                        
+                        chunk.forEach(item => {
+                            const targetId = 'qr-bulk-' + item.id;
+                            html += `
+                                <div class="qr-box">
+                                    <div class="qr-name">${item.name}</div>
+                                    <div id="${targetId}" class="qr-img-container"></div>
+                                </div>
+                            `;
+                            qrTargets.push({ id: targetId, text: item.id });
+                        });
+                        
+                        html += `</div></div>`;
+                        printArea.innerHTML += html;
+                    }
                 }
             });
 
             qrTargets.forEach(qr => {
                 new QRCode(document.getElementById(qr.id), { 
-                    text: qr.text, width: 90, height: 90, colorDark: "#000000", colorLight: "#ffffff" 
+                    text: qr.text, width: 130, height: 130, colorDark: "#000000", colorLight: "#ffffff" 
                 });
             });
 
